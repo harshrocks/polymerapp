@@ -30,15 +30,27 @@ function App() {
     filterPrices();
   }, [prices, searchQuery, selectedLocation, selectedPolymerType, showFavorites]);
 
-  const fetchPrices = async () => {
+  const fetchPrices = async (live = false) => {
     try {
       setLoading(true);
-      const response = await axios.get(`${BACKEND_URL}/api/prices`);
+      const url = live ? `${BACKEND_URL}/api/prices?live=true` : `${BACKEND_URL}/api/prices`;
+      const response = await axios.get(url);
       setPrices(response.data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching prices:', error);
       setLoading(false);
+    }
+  };
+
+  const handleLiveUpdate = async () => {
+    try {
+      setIsLiveUpdating(true);
+      await fetchPrices(true);
+      setIsLiveUpdating(false);
+    } catch (error) {
+      console.error('Error with live update:', error);
+      setIsLiveUpdating(false);
     }
   };
 
