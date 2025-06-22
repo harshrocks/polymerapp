@@ -15,6 +15,7 @@ function App() {
   const [polymerTypes, setPolymerTypes] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [isLiveUpdating, setIsLiveUpdating] = useState(false);
 
   // Fetch initial data
   useEffect(() => {
