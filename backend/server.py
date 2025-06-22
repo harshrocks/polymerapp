@@ -212,13 +212,31 @@ async def root():
     return {"message": "Polymer Pricing API", "status": "active"}
 
 @app.get("/api/prices", response_model=List[PolymerPrice])
-async def get_all_prices():
-    """Get all polymer prices"""
+async def get_all_prices(live: bool = False):
+    """Get all polymer prices - optionally live scrape"""
     try:
-        prices = await get_source_one_prices()
+        if live:
+            # Use live scraping
+            prices = await scrape_source_one_live()
+        else:
+            # Use stored data (faster)
+            prices = await get_source_one_prices()
         return prices
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching prices: {str(e)}")
+
+@app.get("/api/scrape-live")
+async def scrape_live():
+    """Trigger live scraping from source.one"""
+    try:
+        prices = await scrape_source_one_live()
+        return {
+            "message": "Live scraping completed", 
+            "count": len(prices),
+            "timestamp": datetime.now()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Live scraping failed: {str(e)}")
 
 @app.get("/api/prices/search")
 async def search_prices(
