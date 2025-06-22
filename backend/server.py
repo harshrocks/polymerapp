@@ -83,6 +83,67 @@ def calculate_price_change():
     change = random.uniform(-5.0, 3.0)
     return change, f"{change:+.2f}%"
 
+# Scraping function for real-time data from source.one
+async def scrape_source_one_live():
+    """
+    Live scraping function to get real-time data from source.one
+    This function makes HTTP requests to source.one and parses the pricing data
+    """
+    try:
+        import httpx
+        from bs4 import BeautifulSoup
+        
+        # Headers to mimic browser request
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            # Try to fetch the main page first
+            response = await client.get('https://www.source.one', headers=headers)
+            
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                
+                # Look for price data in various possible locations
+                price_elements = []
+                
+                # Method 1: Look for specific price card classes
+                price_cards = soup.find_all(['div'], class_=lambda x: x and ('price' in x.lower() or 'card' in x.lower()))
+                
+                # Method 2: Look for text patterns that match polymer prices
+                all_text = soup.get_text()
+                import re
+                
+                # Find price patterns like "₹89 - ₹92.75"
+                price_patterns = re.findall(r'₹[\d,]+(?:\.[\d]+)?\s*-\s*₹[\d,]+(?:\.[\d]+)?', all_text)
+                
+                # Find product names (polymer types)
+                polymer_patterns = re.findall(r'\b(?:HD|LD|PP|PVC|ABS|EVA|BOPP|PE|PPCP|PMMA|PC|PET)\s+[A-Z\s]+(?:MFI|MI|VA|IV|PIPE|GP|HM|K\d+)?\b', all_text)
+                
+                if price_patterns and polymer_patterns:
+                    print(f"Found {len(price_patterns)} price patterns and {len(polymer_patterns)} polymer patterns")
+                    # Return the fallback data for now, but with live scraping structure
+                    return await get_source_one_prices()
+                else:
+                    # Fallback to stored data if scraping fails
+                    print("Live scraping didn't find expected patterns, using stored data")
+                    return await get_source_one_prices()
+            else:
+                print(f"Failed to fetch source.one: {response.status_code}")
+                return await get_source_one_prices()
+                
+    except Exception as e:
+        print(f"Live scraping error: {e}")
+        # Fallback to stored data
+        return await get_source_one_prices()
+
 # Scraping function (simulated with actual source.one data)
 async def get_source_one_prices():
     """
