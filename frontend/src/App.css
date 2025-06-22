@@ -123,6 +123,44 @@ body {
   color: white;
 }
 
+/* Live Update Button */
+.live-update-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #10b981;
+  border-radius: 0.5rem;
+  background-color: white;
+  color: #047857;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.live-update-btn:hover:not(:disabled) {
+  border-color: #047857;
+  background-color: #d1fae5;
+}
+
+.live-update-btn.updating {
+  border-color: #10b981;
+  background-color: #10b981;
+  color: white;
+  cursor: not-allowed;
+}
+
+.live-update-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.live-update-btn .spin {
+  animation: spin 1s linear infinite;
+}
+
 /* Main Content */
 .main-content {
   flex: 1;
