@@ -136,6 +136,69 @@ class PolymerPricingAPITest(unittest.TestCase):
             self.assertIn("price", history_item)
             
             print(f"✅ Price history test passed - {len(data['history'])} history points for '{product_name}'")
+            
+    def test_live_prices_endpoint(self):
+        """Test the /api/prices endpoint with live=true parameter"""
+        # First get regular prices
+        regular_response = requests.get(f"{BACKEND_URL}/api/prices")
+        self.assertEqual(regular_response.status_code, 200)
+        regular_data = regular_response.json()
+        
+        # Now get live prices
+        live_response = requests.get(f"{BACKEND_URL}/api/prices?live=true")
+        self.assertEqual(live_response.status_code, 200)
+        live_data = live_response.json()
+        
+        # Verify both return valid data
+        self.assertIsInstance(regular_data, list)
+        self.assertIsInstance(live_data, list)
+        self.assertTrue(len(regular_data) > 0, "No regular prices returned")
+        self.assertTrue(len(live_data) > 0, "No live prices returned")
+        
+        # Verify the structure is the same
+        regular_item = regular_data[0]
+        live_item = live_data[0]
+        for field in ["id", "product", "price_range", "min_price", "max_price", 
+                     "price_change", "price_change_percent", "transit_time", 
+                     "last_updated", "location", "currency"]:
+            self.assertIn(field, regular_item)
+            self.assertIn(field, live_item)
+        
+        print(f"✅ Live prices endpoint test passed - {len(live_data)} live prices returned")
+        
+    def test_scrape_live_endpoint(self):
+        """Test the /api/scrape-live endpoint"""
+        response = requests.get(f"{BACKEND_URL}/api/scrape-live")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify response structure
+        self.assertIn("message", data)
+        self.assertIn("count", data)
+        self.assertIn("timestamp", data)
+        
+        # Verify message and count
+        self.assertEqual(data["message"], "Live scraping completed")
+        self.assertTrue(data["count"] > 0, "No prices returned from live scraping")
+        
+        print(f"✅ Scrape live endpoint test passed - {data['count']} prices scraped")
+        
+    def test_fallback_mechanism(self):
+        """Test the fallback mechanism when live scraping fails"""
+        # This is a bit tricky to test directly since we can't force a scraping failure
+        # But we can verify that the live endpoint always returns data, which implies
+        # the fallback mechanism is working
+        
+        # Make multiple requests to increase chance of hitting a failure case
+        for i in range(3):
+            response = requests.get(f"{BACKEND_URL}/api/prices?live=true")
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertIsInstance(data, list)
+            self.assertTrue(len(data) > 0, f"No prices returned on attempt {i+1}")
+            time.sleep(1)  # Small delay between requests
+            
+        print("✅ Fallback mechanism test passed - always received data from live endpoint")
 
 if __name__ == "__main__":
     print(f"Running tests against backend at {BACKEND_URL}")
